@@ -1,0 +1,200 @@
+SQL LESSON #2 ASSIGNMENT COMPLETION
+Student: Petro
+Date: May 27, 2025
+
+========================================
+INTRO QUESTION
+========================================
+What's been your favorite SQL skill or concept so far — or the one that "clicked"?
+
+Answer: The concept of JOINs really clicked for me. Understanding how to connect related data from different tables and seeing how INNER JOIN vs LEFT JOIN affects the results was a breakthrough moment. It made me realize how powerful relational databases can be when properly structured.
+
+========================================
+REVIEW QUESTIONS
+========================================
+
+1. What is a primary key vs. a foreign key?
+Answer: 
+- Primary Key: A unique identifier for each row in a table. It cannot be NULL and must be unique across all rows. Example: personid in the demographics table.
+- Foreign Key: A field that refers to the primary key of another table, creating a relationship between tables. Example: personid in the programming table references personid in demographics.
+
+2. What's the difference between SELECT and SELECT DISTINCT?
+Answer:
+- SELECT: Returns all rows that match the criteria, including duplicates
+- SELECT DISTINCT: Returns only unique rows, removing any duplicates from the result set
+
+3. How does ORDER BY help us interpret results?
+Answer: ORDER BY sorts the results in ascending (ASC) or descending (DESC) order, making it easier to identify patterns, find top/bottom values, and present data in a logical sequence for analysis.
+
+4. Match the SQL keyword to its use case:
+1 → A (WHERE: General filtering for one value or condition)
+2 → C (IN: Filtering for multiple specific values)
+3 → B (LIKE: Pattern matching for partial text values)
+
+========================================
+CODE COMPLETION PRACTICE
+========================================
+
+1. Complete the code to return all languages spoken in the dataset:
+SELECT DISTINCT language FROM demographics;
+
+2. Complete the code to return the number of females over 25:
+SELECT COUNT(*) FROM demographics WHERE age > 25 AND gender = 'Female';
+
+3. Finish the code to return the number of people in each zipcode:
+SELECT zipcode, COUNT(*) AS num_people FROM demographics GROUP BY zipcode;
+
+4. Finish the code to return all legal events with Fraud charge, most recent first:
+SELECT * FROM legalall WHERE topcharge = 'Fraud' ORDER BY courtdate DESC;
+
+========================================
+JOINS PRACTICE
+========================================
+
+1. Write a query to list each pet and their owner's name, but only show pets whose owner's name starts with "A":
+SELECT pe.pet_name, p.name
+FROM people p
+JOIN pets pe ON p.personid = pe.personid
+WHERE p.name LIKE 'A%';
+
+2. Write a query to list all people who don't have any pets:
+SELECT p.name
+FROM people p
+LEFT JOIN pets pe ON p.personid = pe.personid
+WHERE pe.personid IS NULL;
+
+3. Count how many pets each person owns (include people with 0 pets):
+SELECT p.name, COUNT(pe.petid) AS pet_count
+FROM people p
+LEFT JOIN pets pe ON p.personid = pe.personid
+GROUP BY p.personid, p.name;
+
+========================================
+JTCsql.db PRACTICE
+========================================
+
+1. What is the difference in output between these 2 queries?
+Query 1 (INNER JOIN): Only returns people who were referred to programming
+Query 2 (LEFT JOIN): Returns all people from demographics, with NULL values for programming data if they weren't referred
+
+2. Query for people's names and program referral dates (only those referred to programming):
+SELECT d.name, p.referraldate
+FROM demographics d
+JOIN programming p ON d.personid = p.personid;
+
+3. Same query but add program name from programmingLU table:
+SELECT d.name, p.referraldate, lu.name AS program_name
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid;
+
+4. Query name, court date, and topcharge for individuals with Theft legal events:
+SELECT d.name, l.courtdate, l.topcharge
+FROM demographics d
+JOIN legalall l ON d.personid = l.personid
+WHERE l.topcharge = 'Theft';
+
+========================================
+HAVING PRACTICE
+========================================
+
+1. Count of people per zip code for zipcodes with more than 10 people:
+SELECT zipcode, COUNT(*) AS people_count
+FROM demographics
+GROUP BY zipcode
+HAVING COUNT(*) > 10;
+
+2. Find charges that appear more than 2 times:
+SELECT topcharge, COUNT(*) AS charge_count
+FROM legalall
+GROUP BY topcharge
+HAVING COUNT(*) > 2;
+
+========================================
+CRUD OPERATIONS
+========================================
+
+1. Why use WHERE clause with UPDATE or DELETE?
+Answer: Without a WHERE clause, UPDATE would modify ALL rows in the table, and DELETE would remove ALL rows. This could cause catastrophic data loss. The WHERE clause ensures you only affect the specific records you intend to modify.
+
+2. Delete sushi entry (command only, not executed):
+DELETE FROM food WHERE foodname = 'Sushi';
+
+3. Remove food with rating under 8 (command only, not executed):
+DELETE FROM food WHERE rating < 8;
+
+4. Rename Deep Dish Pizza to Thin Crust Pizza:
+UPDATE food SET foodname = 'Thin Crust Pizza' WHERE foodname = 'Deep Dish Pizza';
+
+5. Fix tacos rating to be 8:
+UPDATE food SET rating = 8 WHERE foodname = 'Tacos';
+
+========================================
+RELATIONAL DATABASE PRACTICE
+========================================
+
+1. Query food name, restaurant name, and price from menu_items, food, and restaurants:
+SELECT f.foodname, r.name AS restaurant_name, m.price
+FROM menu_items m
+JOIN food f ON m.food_id = f.foodid
+JOIN restaurants r ON m.restaurant_id = r.restaurant_id;
+
+2. Query food name and restaurant name:
+SELECT f.foodname, r.name AS restaurant_name
+FROM menu_items m
+JOIN food f ON m.food_id = f.foodid
+JOIN restaurants r ON m.restaurant_id = r.restaurant_id;
+
+3. Find restaurants serving more than one menu item:
+SELECT r.name AS restaurant_name, COUNT(*) AS item_count
+FROM restaurants r
+JOIN menu_items m ON r.restaurant_id = m.restaurant_id
+GROUP BY r.restaurant_id, r.name
+HAVING COUNT(*) > 1;
+
+4. Create drinks table:
+CREATE TABLE drinks (
+    drinkid INTEGER PRIMARY KEY AUTOINCREMENT,
+    drinkname VARCHAR(50),
+    type VARCHAR(30),
+    caffeine INTEGER
+);
+
+5. Add 3 drinks to the table:
+INSERT INTO drinks (drinkname, type, caffeine)
+VALUES 
+    ('Coca Cola', 'Soda', 34),
+    ('Orange Juice', 'Juice', 0),
+    ('Green Tea', 'Tea', 25);
+
+6. Update drink caffeine to 35mg:
+UPDATE drinks SET caffeine = 35 WHERE drinkname = 'Coca Cola';
+
+7. Delete all soda drinks:
+DELETE FROM drinks WHERE type = 'Soda';
+
+8. List drinks with more than 30mg caffeine, ordered highest to lowest:
+SELECT * FROM drinks 
+WHERE caffeine > 30 
+ORDER BY caffeine DESC;
+
+========================================
+CLOSING REFLECTION
+========================================
+
+What did you learn?
+- Mastered the difference between INNER JOIN and LEFT JOIN
+- Learned how to use HAVING to filter grouped results
+- Understood CRUD operations and the importance of WHERE clauses
+- Practiced creating relational database structures with foreign keys
+- Gained experience with complex multi-table queries
+
+What are you still confused about?
+- I'd like more practice with complex JOIN scenarios involving 3+ tables
+- Understanding when to use different data types in CREATE TABLE statements
+- Best practices for database design and normalization
+- Performance implications of different query structures
+
+========================================
+END OF ASSIGNMENT
+========================================
