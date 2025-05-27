@@ -570,3 +570,447 @@ Homework:
 1. Why is it ideal to use multiple tables instead of one giant table in a relational database?
 2. Write a SQL query that counts the number of people in the demographics table for each zipcode who are under 30. 
 3. You want to know how many people were referred to each program in the database. Referral information is stored in the programming table.Program names are stored in the programmingLU table. Write a SQL query that shows the program name and the number of people referred to each one.
+
+# Welcome back to SQL Lesson #2
+
+In the next 2 courses, we will learn more about joins, using HAVING, creating your own database/tables, and then we will end with an analytical project. 
+
+Intro Question: What's been your favorite SQL skill or concept so far — or the one that “clicked”?
+
+**Let's begin with a reivew:**
+
+SETUP: 
+
+Start by typing the following into your terminal:
+1. sqlite3 JTCsql.db     (command for program + database instructions)
+2. .mode box             (for formatting output)
+3. .headers on           (for formatting output)
+
+STUDENTS: What is a primary key vs. a foreign key? 
+
+✅ 
+
+
+STUDENTS: What's the difference between `SELECT` and `SELECT DISTINCT`?
+
+✅ 
+
+STUDENTS: How does `ORDER BY` help us interpret results? 
+
+✅ 
+
+STUDENTS:  Match the SQL keyword to its use case by pairing numbers with letters (e.g., 1 → B):**
+
+
+| # | SQL Keyword |
+|---|-------------|
+| 1 | `WHERE`      |
+| 2 | `IN`          |
+| 3 | `LIKE`        |
+
+
+| Letter | Use Case                                      |
+|--------|-----------------------------------------------|
+| A      | General filtering for one value or condition  |
+| B      | Pattern matching for partial text values      |
+| C      | Filtering for multiple specific values        |
+
+✅  
+
+Code Completion Practice
+
+1. STUDENTS: Complete the code below to return all of the langauges spoken in the dataset 
+```sql
+SELECT DISTINCT ________ FROM demographics;
+``` 
+
+✅  
+
+
+2. STUDENTS: Complete the code to return the number of females over 25 in the demographics table
+``` sql 
+SELECT COUNT(*) FROM demographics WHERE age > 25 AND ...
+```
+
+✅  
+
+
+3. STUDENTS: Finish the code so that it returns the number of people in each zipcode
+```sql
+SELECT zipcode, COUNT(*) AS num_people FROM demographics ...
+```
+
+✅  
+
+4. STUDENTS: finish the code to return all legal events with a Fraud charge, with the most recent one first: 
+```sql
+SELECT * FROM legalall WHERE topcharge = 'Fraud' ...
+```
+
+✅
+
+# JOINS
+
+Let's say we have 2 tables in a dataset:
+
+`people`
+| personid | name  |
+|----------|-------|
+| 1        | Alice |
+| 2        | Bob   |
+| 3        | Carla |
+
+`pets`
+| petid | personid | pet_name |
+|-------|---------|----------|
+| 101   | 1       | Fluffy   |
+| 102   | 2       | Rex      |
+| 103   | 2       | Daisy    |
+
+
+As we discussed in the last class, information in a relational database is split into smaller sections, but let's say you'd like to make a table with the following information: 
+
+Owner, Pet Name. These 2 columns live in 2 different tables. 
+
+A `JOIN` allows you to combine information from 2 tables. 
+
+```sql
+SELECT p.name, pe.pet_name
+FROM people p
+JOIN pets pe ON p.personid = pe.personid;
+```
+
+| name  | pet_name |
+| ----- | --------- |
+| Alice | Fluffy    |
+| Bob   | Rex       |
+| Bob   | Daisy     |
+
+Notice:
+Carla from the people table doesn't appear in the results. That’s because the type of JOIN we’re using (also called an INNER JOIN) only shows rows where there’s a match in both tables.
+
+In this case, only people who have a matching personid in the pets table will show up. Since Carla doesn’t have any pets listed, there's no matching row for her in the pets table — so she's excluded from the result.
+
+If we still want Carla to appear, we use a `LEFT JOIN`. 
+
+```sql
+SELECT people.name
+FROM people
+LEFT JOIN pets ON people.personid = pets.ownerid;
+```
+
+Now we can still get information from both tables, but the table in the left join CAN have a blank field: 
+
+| name  | pet_name |
+| ----- | --------- |
+| Alice | Fluffy    |
+| Bob   | Rex       |
+| Bob   | Daisy     |
+| Carla   | NULL    |
+
+
+STUDENTS: Write a query to list each pet and their owner's name, but only show pets whose owner’s name starts with the letter "A".
+<details>
+<summary>need a hint?</summary>
+You will need to use LIKE to complete this question. 
+</details>
+
+✅
+
+
+STUDENTS: Write a query to list all people who don’t have any pets 
+<details>
+<summary>need a hint?</summary>
+No pets = only those whose pet_name is NULL. 
+
+You will need to use LEFT JOIN and WHERE to complete this question. 
+</details>
+
+✅
+
+STUDENTS: Count how many pets each person owns (include people with 0 pets).
+<details>
+<summary>need a hint?</summary>
+You will need to use COUNT and GROUP BY to complete this question
+</details>
+
+✅
+
+Let's apply these skills to `JTCsql.db`
+
+The demographics table has 1 row per person. The programming table has 1 row per person who was referred to programming. 
+
+STUDENTS: what is the difference in output between these 2 queries?
+
+```sql
+SELECT * FROM demographics d
+JOIN programming p on d.personid = p.personid;
+```
+
+```sql
+SELECT * FROM demographics d
+LEFT JOIN programming p on d.personid = p.personid;
+```
+
+✅ 
+
+STUDENTS: 
+I would like to make a table with a person's name (demographics table) and the program referral date (programming). 
+If I only want people who were referred to programming, how would I write this query?
+
+✅
+
+STUDENTS: I would like to have the same information as the above query, but I would like to add the program name from the `programmingLU` table. Please revise the query. 
+<details>
+<summary>need a hint?</summary>
+to check what column links the programmingLU table and the program table, SELECT * FROM each of the tables and look at the column names. 
+</details>
+
+✅
+
+Note: In this teaching database, the data is clean and well-structured, so `JOIN` often works just fine and as intended. But in real-world datasets — which are often messy or incomplete — we sometimes use a `LEFT JOIN` to avoid accidentally excluding rows.
+
+For example, even though every programluid in the programming table should match a program in programmingLU, a `LEFT JOIN` ensures we still include people even if their program data is missing or incomplete.
+
+```sql
+SELECT d.name, lu.name, referraldate
+FROM demographics d
+JOIN programming p on d.personid = p.personid
+LEFT JOIN programmingLU lu on lu.programluid = p.programluid;
+```
+
+One last practice problem before we move on to the next section: 
+
+STUDENTS: Please query the name, court date, and topcharge of any individual with a Theft legal event. 
+
+✅
+
+# HAVING
+
+This query returns programs and a count of the number of referrals per program (this was a practice question for you all at the end of the last class)
+
+```sql
+SELECT lu.name AS program_name, COUNT(*) AS num_referrals
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name;
+```
+`HAVING` is used to filter groups after you've used `GROUP BY`. Think of it as `WHERE` but for grouped results. 
+
+Let's say we want to refine this list to only include programs with over 5 people referred. This is when we would use HAVING 
+
+```sql
+SELECT lu.name AS program_name, COUNT(*) AS num_referrals
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name
+HAVING COUNT(*) > 5;
+```
+
+STUDENTS: Write a query that shows a count of people per zip code in the demographics table but only for zipcodes that have more than 10 people in it.
+
+✅
+
+STUDENTS: Find the charges (from legalall) that appear more than 2 times in the data.
+
+✅
+
+
+# CRUD OPERATIONS 
+
+Exit the current shell by doing control + C
+
+Begin by making a LOCAL copy of a new database with your name: by typing: `sqlite3 dylan.db` into the terminal 
+
+Now, type in the same formatting comands we were using: 
+1. .mode box 
+2. .headers on
+
+** Important note: you will not be pushing any of the following changes
+
+`rm dylan.db` allows you to remove a local database (command this outside of the sqlite3 shell) 
+
+## Section 1: `CREATE`
+
+Each column of a table is assigned a data type. It's important to pick the correct data type because that allows certain functions to work vs. not. For example, if you make an interger a varchar value, you won't be able to count. 
+
+
+| Data Type      | Description                                              | Example                          |
+|----------------|----------------------------------------------------------|----------------------------------|
+| `INTEGER`      | Whole numbers (used for IDs, counts, etc.)               | `42`, `0`, `-3`                  |
+| `TEXT`         | Any string value  (replaced w/VARCHAR in SQLServer)                                       | `'Pizza'`, `'New York'`          |
+| `VARCHAR(n)`   | A string with a max length of `n` (acts like `TEXT`)     | `'Tacos'`, `'Pad Thai'`          |
+| `REAL`         | Floating-point numbers (decimals)                        | `8.5`, `3.14`                    |
+| `DECIMAL(p,s)` | Precise decimal with `p` digits total, `s` after point   | `DECIMAL(6,2)` → `9999.99`       |
+| `BOOLEAN`      | Represents true/false (stored as 1 or 0 in SQLite)       | `1` = true, `0` = false          |
+| `DATE`         | Stores a date as a string in `YYYY-MM-DD` format         | `'2025-06-01'`                   |
+
+
+```sql 
+CREATE TABLE food(
+	foodid INTEGER PRIMARY KEY AUTOINCREMENT,  
+	foodname VARCHAR(50),      
+   category VARCHAR(30),
+   rating INT
+);
+```
+
+
+| Column Name | Data Type                    | Explanation                                                                 |
+|-------------|------------------------------|-----------------------------------------------------------------------------|
+| `foodid`    | `INTEGER PRIMARY KEY AUTOINCREMENT` | A unique number assigned to each food item, automatically increases by 1 |
+| `foodname`  | `VARCHAR(50)`                | A text field that can hold up to 50 characters (e.g., `'Tacos'`, `'Sushi'`) |
+| `category`  | `VARCHAR(30)`                | A shorter text field for the type of cuisine (e.g., `'Mexican'`, `'Thai'`) |
+| `rating`    | `INT`  (same as `INTEGER`)                      | A whole number rating from 1–10 or similar scale                            |
+
+
+```sql
+INSERT INTO food (foodname, category, rating)
+VALUES 
+  ('Sushi', 'Japanese', 9),
+  ('Tacos', 'Mexican', 8),
+  ('Pad Thai', 'Thai', 6),
+  ('Deep Dish Pizza', 'Italian', 10),
+  ('Hot Dog', 'American', 7);
+```
+
+## Section 2: READ
+
+```sql 
+SELECT * FROM food;
+```
+
+## PART 3: UPDATE
+modify data in your dataset 
+
+I went back to the Mexican place and decided the tacos were actually so good that I want to rate them 10
+
+``` sql
+UPDATE food 
+SET rating = 10 
+WHERE foodname = 'Tacos';
+```
+
+check the update 
+
+```sql 
+SELECT * FROM food;
+```
+
+STUDENTS: Try to rename the Deep Dish Pizza to Thin Crust Pizza 
+
+✅
+
+STUDENTS: Try to fix the rating of tacos to be 8.
+
+✅
+
+## Part 4: Delete
+Remove data (carefully) from the dataset 
+
+STUDENTS: Why do you think it is important to use a WHERE clause when running an UPDATE or DELETE statement? What would happen if you don’t?
+
+✅
+
+```sql 
+DELETE FROM tablename 
+WHERE column = ' '
+```
+
+STUDENTS: Last night you ate sushi and got food poisoning so you want to delete your sushi entry from the database [dont actually run this]. 
+
+✅
+
+STUDENTS: We only want top notch food in our data now. Please remove any food with a rating under 8 [don't actually run this]. 
+
+✅
+
+Real-world databases typically have multiple related tables. Let's look at how tables can be related. 
+
+```sql 
+-- Create a restaurants table
+CREATE TABLE restaurants (
+    restaurant_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    cuisine_type TEXT,
+    location TEXT,
+    rating INTEGER
+);
+```
+
+```sql 
+INSERT INTO restaurants (name, cuisine_type, location, rating)
+VALUES
+('Joe''s Pizza', 'Italian', 'New York, NY', 7),
+('Sushi Go', 'Japanese', 'San Francisco, CA', 2),
+('La Taqueria', 'Mexican', 'Chicago, IL', 9),
+('Green Earth', 'Vegetarian', 'Austin, TX', 8);
+```
+
+In a relational database, we could create relationships between foods and restaurants:
+-- Example: A menu_items table linking foods and restaurants
+
+```sql
+CREATE TABLE menu_items (
+    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    food_id INTEGER REFERENCES foods(foodid),
+    restaurant_id INTEGER REFERENCES restaurants(restaurant_id),
+    price DECIMAL (6,2)
+);
+
+-- Now let’s create a third table that connects foods to restaurants.
+-- This is called a “junction table” and allows relationships to be has between the foods and restaurants tables.
+-- Each row will represent a menu item (a specific food served at a specific restaurant).
+
+INSERT INTO menu_items (food_id, restaurant_id, price)
+VALUES
+  (4, 1, 12.99),  -- Thin Crust Pizza at Joe's Pizza
+  (1, 2, 14.50),  -- Sushi at Sushi Go
+  (2, 3, 9.75),   -- Tacos at La Taqueria
+  (5, 4, 7.25);   -- Hot Dog at Green Earth
+```
+
+STUDENTS: using informtion from the `menu_items`, `food`, and `restaurants` tables, please make a query that returns the `food name`, `restaurant name`, and `price`. 
+
+✅
+
+STUDENTS: please write a query that gives us the food name and the restaurant name 
+
+HINT: we will still need the menu_items table here because it links tables to one another 
+
+✅
+
+STUDENTS: Write a query to find all restaurants that serve more than one menu item. List the restaurant name and the number of items they serve.
+
+
+STUDENTS TRY: 
+Try creating your own table called drinks with the following columns:
+1. drinkid (primary key, auto-incrementing)
+2. drinkname (max 50 characters)
+3. type (e.g., soda, juice, water — max 30 characters)
+4. caffeine (integer — mg per serving)
+
+✅
+
+STUDENTS: Add at least 3 drinks to your new table. One of them should have 0 caffeine.
+
+✅
+
+STUDENTS: You find out one of your drinks actually has 35mg of caffeine. Update it.
+
+✅
+
+STUDENTS: You want to cut back on soda. Delete all drinks in the drinks table where the type is 'Soda'.
+(And if you don't have a soda, eliminate another type)
+
+✅
+
+STUDENTS: Can you write a query to list all drinks with more than 30mg of caffeine, ordered from highest to lowest?
+✅
+
+`rm dylan.db` (into the nain terminal) allows you to remove a local database (command this outside of the sqlite3 shell)
+
+# That's all! 
+In this lesson we have covered JOINS, HAVING, and CRUD operations. Next class, we will be doing an analytical project where you'll apply everythign you've learned so far! 
+
+Closing question: what did you learn and what are you still confused about? 
