@@ -678,58 +678,365 @@ JOIN programmingLU lu ON p.programluid = lu.programluid
 GROUP BY lu.name;
 ```
 
-# in progress below
+# Welcome back to SQL Lesson #2
 
-STUDENTS: add to this where statement to further
+In the next 2 courses, we will learn more about joins, using HAVING, creating your own database/tables, and then we will end with an analytical project. 
+
+Intro Question: What's been your favorite SQL skill or concept so far — or the one that “clicked”?
+
+**Let's begin with a reivew:**
+
+SETUP: 
+
+Start by typing the following into your terminal:
+1. sqlite3 JTCsql.db     (command for program + database instructions)
+2. .mode box             (for formatting output)
+3. .headers on           (for formatting output)
+
+STUDENTS: What is a primary key vs. a foreign key? 
+
+✅ 
+
+A primary key is a unique identifier for each row in a table (like `personid` in the demographics table). A foreign key is a column in one table that refers to the primary key of another table — it creates the link between the tables.
+
+STUDENTS: What's the difference between `SELECT` and `SELECT DISTINCT`?
+
+✅ 
+
+SELECT shows all the data from a column, including repeats. 
+SELECT DISTINCT only shows the unique values in that column — like if you only want to see which languages appear, not how many times they appear.
+
+STUDENTS: How does `ORDER BY` help us interpret results? 
+
+✅ 
+`ORDER BY` lets us sort data in a way that makes patterns easier to spot — like oldest to youngest, or grouping all legal events by charge name.
+
+STUDENTS:  Match the SQL keyword to its use case by pairing numbers with letters (e.g., 1 → B):**
 
 
+| # | SQL Keyword |
+|---|-------------|
+| 1 | `WHERE`      |
+| 2 | `IN`          |
+| 3 | `LIKE`        |
 
+
+| Letter | Use Case                                      |
+|--------|-----------------------------------------------|
+| A      | General filtering for one value or condition  |
+| B      | Pattern matching for partial text values      |
+| C      | Filtering for multiple specific values        |
+
+✅  
+1 → A  
+2 → C  
+3 → B
+
+
+| SQL Example                                                         | What It Returns                                      |
+|----------------------------------------------------------------------|-------------------------------------------------------|
+| `SELECT * FROM demographics WHERE age > 40;`                         | All people over the age of 40                        |
+| `SELECT * FROM demographics WHERE zipcode IN (62701, 62703);`       | People who live in zipcode 62701 or 62703           |
+| `SELECT * FROM demographics WHERE name LIKE 'Ma%';`                 | Names that start with "Ma", like Maria or Marcus     |
+
+Code Completion Practice
+
+1. STUDENTS: Complete the code below to return all of the langauges spoken in the dataset 
 ```sql
-SELECT * FROM legalall;
---
-SELECT * FROM demographics;
+SELECT DISTINCT ________ FROM demographics;
+``` 
+
+✅  
+```sql
+SELECT DISTINCT language FROM demographics;
+``` 
+
+
+2. STUDENTS: Complete the code to return the number of females over 25 in the demographics table
+``` sql 
+SELECT COUNT(*) FROM demographics WHERE age > 25 AND ...
 ```
 
+✅  
 ```sql
---
-SELECT * FROM legalall l
-JOIN demographics d ON l.personid = d.personid;
+SELECT COUNT(*) FROM demographics WHERE age > 25 AND gender = 'Female';
 ```
 
+
+3. STUDENTS: Finish the code so that it returns the number of people in each zipcode
 ```sql
--- We want all of legalall and just name/age from demographics
-SELECT l.*, d.name, d.age
-FROM legalall l
-JOIN demographics d ON l.personid = d.personid;
+SELECT zipcode, COUNT(*) AS num_people FROM demographics ...
 ```
 
+✅  
+```sql 
+SELECT zipcode, COUNT(*) AS num_people FROM demographics GROUP BY zipcode;
+```
+
+4. STUDENTS: finish the code to return all legal events with a Fraud charge, with the most recent one first: 
 ```sql
---
+SELECT * FROM legalall WHERE topcharge = 'Fraud' ...
+```
+
+✅
+```sql
+SELECT * FROM legalall WHERE topcharge = 'Fraud' ORDER BY courtdate DESC;
+```
+
+# JOINS
+
+Let's say we have 2 tables in a dataset:
+
+`people`
+| personid | name  |
+|----------|-------|
+| 1        | Alice |
+| 2        | Bob   |
+| 3        | Carla |
+
+`pets`
+| petid | personid | pet_name |
+|-------|---------|----------|
+| 101   | 1       | Fluffy   |
+| 102   | 2       | Rex      |
+| 103   | 2       | Daisy    |
+
+
+As we discussed in the last class, information in a relational database is split into smaller sections, but let's say you'd like to make a table with the following information: 
+
+Owner, Pet Name. These 2 columns live in 2 different tables. 
+
+A `JOIN` allows you to combine information from 2 tables. 
+
+```sql
+SELECT p.name, pe.pet_name
+FROM people p
+JOIN pets pe ON p.personid = pe.personid;
+```
+
+| name  | pet_name |
+| ----- | --------- |
+| Alice | Fluffy    |
+| Bob   | Rex       |
+| Bob   | Daisy     |
+
+Notice:
+Carla from the people table doesn't appear in the results. That’s because the type of JOIN we’re using (also called an INNER JOIN) only shows rows where there’s a match in both tables.
+
+In this case, only people who have a matching personid in the pets table will show up. Since Carla doesn’t have any pets listed, there's no matching row for her in the pets table — so she's excluded from the result.
+
+If we still want Carla to appear, we use a `LEFT JOIN`. 
+
+```sql
+SELECT people.name
+FROM people
+LEFT JOIN pets ON people.personid = pets.ownerid;
+```
+
+Now we can still get information from both tables, but the table in the left join CAN have a blank field: 
+
+| name  | pet_name |
+| ----- | --------- |
+| Alice | Fluffy    |
+| Bob   | Rex       |
+| Bob   | Daisy     |
+| Carla   | NULL    |
+
+
+STUDENTS: Write a query to list each pet and their owner's name, but only show pets whose owner’s name starts with the letter "A".
+<details>
+<summary>need a hint?</summary>
+You will need to use LIKE to complete this question. 
+</details>
+
+✅
+```sql
+SELECT pe.pet_name, p.name
+FROM pets pe
+JOIN people p ON pe.personid = p.personid
+WHERE p.name LIKE 'A%';
+```
+| name  | pet_name |
+| ----- | --------- |
+| Alice | Fluffy    |
+
+STUDENTS: Write a query to list all people who don’t have any pets 
+<details>
+<summary>need a hint?</summary>
+No pets = only those whose pet_name is NULL. 
+
+You will need to use LEFT JOIN and WHERE to complete this question. 
+</details>
+
+✅
+
+```sql
+SELECT people.name
+FROM people
+LEFT JOIN pets ON people.personid = pets.ownerid
+WHERE pets.pet_name IS NULL;
+```
+| name  | 
+| ----- | 
+| Carla | 
+
+STUDENTS: Count how many pets each person owns (include people with 0 pets).
+<details>
+<summary>need a hint?</summary>
+You will need to use COUNT and GROUP BY to complete this question
+</details>
+
+✅
+```sql
+SELECT p.name, COUNT(pe.petid) AS num_pets
+FROM people p
+LEFT JOIN pets pe ON p.personid = pe.personid
+GROUP BY p.name;
+```
+| name  | num_pets |
+| ----- | --------- |
+| Alice | 1   |
+| Bob   | 2     |
+| Carla   | 0   |
+
+Let's apply these skills to `JTCsql.db`
+
+The demographics table has 1 row per person. The programming table has 1 row per person who was referred to programming. 
+
+STUDENTS: what is the difference in output between these 2 queries?
+
+```sql
 SELECT * FROM demographics d
-JOIN programming p ON d.personid = p.personid;
+JOIN programming p on d.personid = p.personid;
 ```
 
 ```sql
--- LEFT JOIN to keep all people, even those not in programming
 SELECT * FROM demographics d
-LEFT JOIN programming p ON d.personid = p.personid;
+LEFT JOIN programming p on d.personid = p.personid;
 ```
 
----
+✅ JOIN includes only referred people because a person must be in both the demographics and the programming table. LEFT JOIN includes everyone in demographics and information from programming if it exists.
 
-## Summary
+STUDENTS: 
+I would like to make a table with a person's name (demographics table) and the program referral date (programming). 
+If I only want people who were referred to programming, how would I write this query?
 
-You've just walked through a realistic dataset structure using SQL: exploring tables, filtering, joining, and aggregating. The next step is learning how to create your own tables.
+✅
+```sql
+SELECT name, referraldate
+FROM demographics d
+JOIN programming p on d.personid = p.personid;
+```
 
-# SQL Lesson 1: CRUD OPERATIONS 
+STUDENTS: I would like to have the same information as the above query, but I would like to add the program name from the `programmingLU` table. Please revise the query. 
+<details>
+<summary>need a hint?</summary>
+to check what column links the programmingLU table and the program table, SELECT * FROM each of the tables and look at the column names. 
+</details>
+
+✅
+```sql
+SELECT d.name, lu.name, referraldate
+FROM demographics d
+JOIN programming p on d.personid = p.personid
+JOIN programmingLU lu on lu.programluid = p.programluid;
+```
+
+Note: In this teaching database, the data is clean and well-structured, so `JOIN` often works just fine and as intended. But in real-world datasets — which are often messy or incomplete — we sometimes use a `LEFT JOIN` to avoid accidentally excluding rows.
+
+For example, even though every programluid in the programming table should match a program in programmingLU, a `LEFT JOIN` ensures we still include people even if their program data is missing or incomplete.
+
+```sql
+SELECT d.name, lu.name, referraldate
+FROM demographics d
+JOIN programming p on d.personid = p.personid
+LEFT JOIN programmingLU lu on lu.programluid = p.programluid;
+```
+
+One last practice problem before we move on to the next section: 
+
+STUDENTS: Please query the name, court date, and topcharge of any individual with a Theft legal event. 
+
+✅
+```sql
+SELECT name, courtdate, topcharge
+FROM demographics d
+JOIN legalall l on d.personid = l.personid
+WHERE topcharge = 'Theft';
+```
+
+# HAVING
+
+This query returns programs and a count of the number of referrals per program (this was a practice question for you all at the end of the last class)
+
+```sql
+SELECT lu.name AS program_name, COUNT(*) AS num_referrals
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name;
+```
+`HAVING` is used to filter groups after you've used `GROUP BY`. Think of it as `WHERE` but for grouped results. 
+
+Let's say we want to refine this list to only include programs with over 5 people referred. This is when we would use HAVING 
+
+```sql
+SELECT lu.name AS program_name, COUNT(*) AS num_referrals
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name
+HAVING COUNT(*) > 5;
+```
+
+STUDENTS: Write a query that shows a count of people per zip code in the demographics table but only for zipcodes that have more than 10 people in it.
+
+✅
+```sql
+SELECT zipcode, COUNT(*) AS num_people
+FROM demographics
+GROUP BY zipcode
+HAVING COUNT(*) > 10;
+```
+
+STUDENTS: Find the charges (from legalall) that appear more than 2 times in the data.
+
+✅
+```sql
+SELECT topcharge, COUNT(*) AS num_cases
+FROM legalall
+GROUP BY topcharge
+HAVING COUNT(*) > 2;
+```
+
+
+# CRUD OPERATIONS 
+
+Exit the current shell by doing control + C
 
 Begin by making a LOCAL copy of a new database with your name: by typing: `sqlite3 dylan.db` into the terminal 
 
+Now, type in the same formatting comands we were using: 
+1. .mode box 
+2. .headers on
+
 ** Important note: you will not be pushing any of the following changes
 
-`rm student1.db` allows you to remove a local database (command this outside of the sqlite3 shell) 
+`rm dylan.db` allows you to remove a local database (command this outside of the sqlite3 shell) 
 
 ## Section 1: `CREATE`
+
+Each column of a table is assigned a data type. It's important to pick the correct data type because that allows certain functions to work vs. not. For example, if you make an interger a varchar value, you won't be able to count. 
+
+
+| Data Type      | Description                                              | Example                          |
+|----------------|----------------------------------------------------------|----------------------------------|
+| `INTEGER`      | Whole numbers (used for IDs, counts, etc.)               | `42`, `0`, `-3`                  |
+| `TEXT`         | Any string value  (replaced w/VARCHAR in SQLServer)                                       | `'Pizza'`, `'New York'`          |
+| `VARCHAR(n)`   | A string with a max length of `n` (acts like `TEXT`)     | `'Tacos'`, `'Pad Thai'`          |
+| `REAL`         | Floating-point numbers (decimals)                        | `8.5`, `3.14`                    |
+| `DECIMAL(p,s)` | Precise decimal with `p` digits total, `s` after point   | `DECIMAL(6,2)` → `9999.99`       |
+| `BOOLEAN`      | Represents true/false (stored as 1 or 0 in SQLite)       | `1` = true, `0` = false          |
+| `DATE`         | Stores a date as a string in `YYYY-MM-DD` format         | `'2025-06-01'`                   |
+
 
 ```sql 
 CREATE TABLE food(
@@ -739,6 +1046,15 @@ CREATE TABLE food(
    rating INT
 );
 ```
+
+
+| Column Name | Data Type                    | Explanation                                                                 |
+|-------------|------------------------------|-----------------------------------------------------------------------------|
+| `foodid`    | `INTEGER PRIMARY KEY AUTOINCREMENT` | A unique number assigned to each food item, automatically increases by 1 |
+| `foodname`  | `VARCHAR(50)`                | A text field that can hold up to 50 characters (e.g., `'Tacos'`, `'Sushi'`) |
+| `category`  | `VARCHAR(30)`                | A shorter text field for the type of cuisine (e.g., `'Mexican'`, `'Thai'`) |
+| `rating`    | `INT`  (same as `INTEGER`)                      | A whole number rating from 1–10 or similar scale                            |
+
 
 ```sql
 INSERT INTO food (foodname, category, rating)
@@ -754,21 +1070,6 @@ VALUES
 
 ```sql 
 SELECT * FROM food;
-```
-
-We will come back to more complex read statments in the next unit, but the format for viewing an entire table is:
-
-```sql 
-SELECT * FROM table; --* = all
-``` 
-
-
-```sql 
-SELECT foodname, rating FROM food WHERE rating >= 9;
-```
-
-```sql 
-SELECT foodname FROM food WHERE category = 'Thai';
 ```
 
 ## PART 3: UPDATE
@@ -794,19 +1095,39 @@ STUDENTS: Try to rename the Deep Dish Pizza to Thin Crust Pizza
 ```sql 
 UPDATE food 
 SET foodname = 'Thin Crust Pizza' 
-WHERE foodname = 'Deep Dish Pizza' 
+WHERE foodname = 'Deep Dish Pizza' ;
+```
+
+STUDENTS: Try to fix the rating of tacos to be 8.
+
+✅
+```sql 
+UPDATE food 
+SET rating = 8
+WHERE foodname = 'Tacos' ;
 ```
 
 ## Part 4: Delete
 Remove data (carefully) from the dataset 
 
-See below the format for deleting things from a dataset 
+STUDENTS: Why do you think it is important to use a WHERE clause when running an UPDATE or DELETE statement? What would happen if you don’t?
+
+✅
+Answer:
+The WHERE clause specifies which rows should be updated or deleted. Without it, the command applies to every row in the table.
+
+In an UPDATE statement, forgetting the WHERE clause means all rows will be changed to the new value.
+
+In a DELETE statement, it means you will delete the entire table’s data — which is often irreversible in SQLite.
+
+See below the format for deleting things from a dataset:
+
 ```sql 
 DELETE FROM tablename 
-WHERE X = ___
+WHERE column = ' '
 ```
 
-STUDENTS: Last night you ate sushi and got food poisoning so you want to delete your sushi entry from the database. 
+STUDENTS: Last night you ate sushi and got food poisoning so you want to delete your sushi entry from the database [dont actually run this]. 
 
 ✅
 ```sql 
@@ -814,7 +1135,7 @@ DELETE FROM food
 WHERE foodname = 'Sushi';
 ```
 
-STUDENTS: We only want top noth food in our data now. Please remove any food with a rating under 8. 
+STUDENTS: We only want top notch food in our data now. Please remove any food with a rating under 8 [don't actually run this]. 
 
 ✅
 ```sql 
@@ -854,57 +1175,474 @@ CREATE TABLE menu_items (
     restaurant_id INTEGER REFERENCES restaurants(restaurant_id),
     price DECIMAL (6,2)
 );
+
+-- Now let’s create a third table that connects foods to restaurants.
+-- This is called a “junction table” and allows relationships to be has between the foods and restaurants tables.
+-- Each row will represent a menu item (a specific food served at a specific restaurant).
+
+INSERT INTO menu_items (food_id, restaurant_id, price)
+VALUES
+  (4, 1, 12.99),  -- Thin Crust Pizza at Joe's Pizza
+  (1, 2, 14.50),  -- Sushi at Sushi Go
+  (2, 3, 9.75),   -- Tacos at La Taqueria
+  (5, 4, 7.25);   -- Hot Dog at Green Earth
 ```
 
+STUDENTS: using informtion from the `menu_items`, `food`, and `restaurants` tables, please make a query that returns the `food name`, `restaurant name`, and `price`. 
 
-
-dylan add: make them be able to make a table 
-
-##making a table using simple data 
-
-##making a table using csv data 
-Let's make your own copy of the demographics table in your new database. Please open this csv file and save a copy to your machine. 
-
-```bash
-https://drive.google.com/file/d/1q3HVU2pb_7mna9ZXz3uO2BkJhf5eYj3f/view?usp=sharing
+✅
+```sql
+SELECT f.foodname, r.name AS restaurant_name, mi.price
+FROM menu_items mi
+JOIN food f ON mi.food_id = f.foodid
+JOIN restaurants r ON mi.restaurant_id = r.restaurant_id;
 ```
 
-## Project: Program Analysis 
+STUDENTS: please write a query that gives us the food name and the restaurant name 
 
-ASK: An executive at your office would like you to make a presentation on 
+HINT: we will still need the menu_items table here because it links tables to one another 
 
-Let's explore our other 2 tables: programming and programminglu 
+✅
+```sql
+SELECT 
+  f.foodname, 
+  r.name AS restaurant_name
+FROM menu_items mi
+JOIN food f ON mi.food_id = f.foodid
+JOIN restaurants r ON mi.restaurant_id = r.restaurant_id
+WHERE r.location LIKE '%Chicago%';
+```
+STUDENTS: Write a query to find all restaurants that serve more than one menu item. List the restaurant name and the number of items they serve.
+
+```sql
+SELECT r.name, COUNT(*) AS item_count
+FROM menu_items mi
+JOIN restaurants r ON mi.restaurant_id = r.restaurant_id
+GROUP BY r.name
+HAVING COUNT(*) > 1;
+```
+
+STUDENTS TRY: 
+Try creating your own table called drinks with the following columns:
+1. drinkid (primary key, auto-incrementing)
+2. drinkname (max 50 characters)
+3. type (e.g., soda, juice, water — max 30 characters)
+4. caffeine (integer — mg per serving)
+
+✅
+```sql
+CREATE TABLE drinks (
+  drinkid INTEGER PRIMARY KEY AUTOINCREMENT,
+  drinkname VARCHAR(50),
+  type VARCHAR(30),
+  caffeine INT
+);
+```
+
+STUDENTS: Add at least 3 drinks to your new table. One of them should have 0 caffeine.
+
+✅
+```sql
+INSERT INTO drinks (drinkname, type, caffeine)
+VALUES 
+  ('Coca-Cola', 'Soda', 34),
+  ('Green Tea', 'Tea', 28),
+  ('Orange Juice', 'Juice', 0);
+  ```
+
+STUDENTS: You find out one of your drinks actually has 35mg of caffeine. Update it.
+
+✅
+```sql
+UPDATE drinks
+SET caffeine = 35
+WHERE drinkname = 'Green Tea';
+```
+
+STUDENTS: You want to cut back on soda. Delete all drinks in the drinks table where the type is 'Soda'.
+(And if you don't have a soda, eliminate another type)
+
+✅
+```sql
+DELETE FROM drinks
+WHERE type = 'Soda';
+```
+
+STUDENTS: Can you write a query to list all drinks with more than 30mg of caffeine, ordered from highest to lowest?
+✅
 
 ```sql 
-SELECT * FROM programming;
+SELECT * FROM drinks
+WHERE caffeine > 30
+ORDER BY caffeine DESC;
 ```
+
+`rm dylan.db` (into the nain terminal) allows you to remove a local database (command this outside of the sqlite3 shell)
+
+# That's all! 
+In this lesson we have covered JOINS, HAVING, and CRUD operations. Next class, we will be doing an analytical project where you'll apply everythign you've learned so far! 
+
+Closing question: what did you learn and what are you still confused about? 
+
+
+# Welcome to Class 3! 
+
+Review Questions: 
+
+1. What do we need to be sure to include in an `UPDATE` or `DELETE` statement when modifying our databases? 
+
+✅
+Answer:
+The WHERE clause specifies which rows should be updated or deleted. Without it, the command applies to every row in the table.
+
+In an UPDATE statement, forgetting the WHERE clause means all rows will be changed to the new value.
+
+In a DELETE statement, it means you will delete the entire table’s data — which is often irreversible in SQLite.
+
+2. In what format are DATEs stored in SQL?
+
+✅
+`YYYY-MM-DD`
+
+JOIN WARM-UP: 
+
+3. You'd like to view the number of people per charge for each program:  
+
+Your table will have these columns: PROGRAM NAME / CHARGE / PERSON COUNT
+
+✅
+```sql
+SELECT lu.name AS program_name, l.topcharge, COUNT(DISTINCT p.personid) AS person_count
+FROM programming p
+JOIN legalall l ON l.personid = p.personid
+JOIN programmingLU lu ON lu.programluid = p.programluid
+GROUP BY lu.name, l.topcharge;
+```
+
+# Analytics Project 
+
+**Scenario: Your office has launched multiple diversion program pilots. Leadership wants a summary of how these programs are performing and who they’re reaching. Your job is to query the database and create a short, clear report that answers the questions below.**
+
+Instructions: 
+- You will create an analytical report that follows the structure below. You must answer the questions under each heading and please also add one of your own takeaways. 
+- Remeber when you produce an analysis, you usually won't be presenting to people with a technical background. Therefore, you'll need to translate your data findings into a format that is digestible like a paragraph. 
+- You will start by writing a queries to pull numbers and then make a document with your findings. 
+
+Logistics: 
+- You can choose to create one report per person or per group — but everyone should collaborate on the queries and help each other debug. 
+- TAs and I will be available in a separate breakout room and will drop into groups periodically to check in.
+- We will still take both 10-minute breaks: One at 7:30 and one at 8:30 (EST). 
+- At 8:40 (EST), or earlier if groups are finished, we will regroup to discuss. I’ll invite groups to share their findings for each section if they’re comfortable.
+
+Use the `JTCsql.db` database to complete this report. As a reminder: 
+
+SETUP:
+
+1. sqlite3 JTCsql.db 
+2. .headers on 
+3. .mode box 
+
+TABLES:
+
+| Table Name       | Description                                      |
+|------------------|--------------------------------------------------|
+| `demographics`   | One row per person in the dataset                |
+| `legalall`       | One row per legal event — a person may have multiple|
+| `programming`    | One row per person referred to programming       |
+| `programmingLU`  | One row per program, with details                |
+
+
+### 1. 🧾 Program Overview
+
+- What are the programs? 
+- When did each of them start? 
+- What charge must a person have to be eligible for each program? 
+- How many people have been referred to each program? 
+      
+<details>
+<summary>💡 Starter queries</summary>
+
+```sql
+SELECT * FROM programmingLU;
+
+SELECT ____, COUNT(*) 
+FROM programming 
+GROUP BY ____;
+```
+</details>
+
+
+<details>
+<summary> Answer queries </summary>
+
+```sql 
+SELECT * FROM programmingLU;
+
+
+SELECT lu.name, COUNT(*) AS num_referrals
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name;
+```
+</details>
+
+<details>
+<summary> Potential Write Up </summary>
+
+There are 3 active programs the office is offering include Intensive Relief, Speedy Recovery, Theft Counseling. Intensive Relief and Speedy Recovery are programs for those facing drug charges and both are offered by hope treatments. Theft counseling serves those facing theft charges and is offered by Counseling Star. All of these programs were piloted starting on Jan 1, 2025. ReEnter is not currently active, but it will serve those facing assault charges. 
+
+So far, 10 people were referred to Intensive Relief, 13 were referred to Speedy Recovery, and 5 were referred to theft counseling. 
+
+</details>
+
+<br>
+
+ex. 
+When I run the following query: 
+
 ```sql 
 SELECT * FROM programminglu;
 ```
 
+I can start to write the following takeaway: 
+The programs the office is offering include Intensive Relief, Speedy Recovery, Theft Counseling, and ReEnter. Intensive Relief and Speedy Recovery are 2 distinct programs for those facing drug charges and both are offered by hope treatments... 
+
+### 2. 👥 Participant Demographics
+- What is the racial breakdown of participants in each program?
+- What is the gender breakdown?
+- What is the average age per program? -- Hint: use AVG() instead of COUNT() in the same format
+
+<details> <summary>💡 Starter queries</summary>
+
+```sql
+SELECT programluid, AVG(age)
+...
+GROUP BY programluid;
+```
+</details>
+
+<details> <summary>Answer queries</summary>
+
+```sql
+SELECT lu.name, race, COUNT(*) 
+FROM programming p
+JOIN demographics d ON p.personid = d.personid
+JOIN programminglu lu ON p.programluid = lu.programluid
+GROUP BY lu.programluid, race;
+
+SELECT lu.name, d.gender, COUNT(*) AS num_people
+FROM programming p
+JOIN demographics d ON p.personid = d.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name, d.gender;
+
+SELECT lu.name, AVG(d.age) AS avg_age
+FROM programming p
+JOIN demographics d ON p.personid = d.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name;
+```
+</details>
+
+<details>
+<summary> Potential Write Up </summary>
+
+Intensive Relief <br>
+Of the 10 individuals referred to Intensive Relief, a majority were white (60%) and predominantly male (70%). The average age of participants was 32.
+<br>
+Speedy Recovery<br>
+Among the 13 people referred to Speedy Recovery, the majority were Black (30%) or Other/Hispanic (30%). The group was also largely male (77%), with an average age of 31.
+<br>
+Theft Counseling<br>
+Of the 5 participants referred to Theft Counseling, 40% were white and 40% were Other/Hispanic. The group was primarily male (80%) and had a notably higher average age of 41.
+
+</details>
+
+### 3. ⚖️ Legal Background
+- What is the range of the number of legal events participants in each program has (between x and y legal events)?
+- How many people referred to any program had 5 legal events?
+- Along with the charge a participant MUST have to be eligible for a program, what are other common charges people in these programs are facing? 
+
+<details> <summary>💡 Starter queries</summary>
+
+```sql
+SELECT p.personid, lu.name, COUNT(l.legaleventid) AS num_events
+...
+GROUP BY lu.name, p.personid;
+
+....
+HAVING COUNT(l.legaleventid) = 5;
 
 
+SELECT lu.name AS program_name, l.topcharge, COUNT(DISTINCT p.personid) AS person_count
+FROM programming p
+JOIN legalall l ON l.personid = p.personid
+JOIN programmingLU lu ON lu.programluid = p.programluid
+GROUP BY lu.name, l.topcharge; 
+```
+</details>
+
+<details> <summary>Answer queries</summary>
+
+```sql
+SELECT p.personid, lu.name, COUNT(l.legaleventid) AS num_events
+FROM programming p
+JOIN legalall l ON p.personid = l.personid
+JOIN programminglu lu ON p.programluid = lu.programluid
+GROUP BY lu.name, p.personid;
+
+SELECT COUNT(DISTINCT p.personid) AS num_people_with_multiple_events
+FROM programming p
+JOIN legalall l ON p.personid = l.personid
+GROUP BY p.personid
+HAVING COUNT(l.legaleventid) = 5;
+
+--below is a subquery (we didn;t get a chance to cover this, but it makes the above more efficient)
+SELECT COUNT(*) 
+FROM (
+  SELECT p.personid
+  FROM programming p
+  JOIN legalall l ON p.personid = l.personid
+  GROUP BY p.personid
+  HAVING COUNT(l.legaleventid) = 5
+);
+
+SELECT lu.name AS program_name, l.topcharge, COUNT(DISTINCT p.personid) AS person_count
+FROM programming p
+JOIN legalall l ON l.personid = p.personid
+JOIN programmingLU lu ON lu.programluid = p.programluid
+GROUP BY lu.name, l.topcharge; 
+```
+</details>
 
 
+<details> <summary>Potential Write Up</summary>
 
-##making a table using simple data 
+Across all three active programs, the range of legal events per participant is consistent: each person referred has between 2 and 5 legal events.
 
-##making a table using csv data 
-Let's make your own copy of the demographics table in your new database. Please open this csv file and save a copy to your machine. 
+Intensive Relief, though designed for individuals facing drug charges, also sees significant overlap with property-related offenses — 7 out of 10 participants are also facing vandalism charges.
 
-```bash
-https://drive.google.com/file/d/1q3HVU2pb_7mna9ZXz3uO2BkJhf5eYj3f/view?usp=sharing
+Speedy Recovery, another program focused on drug-related offenses, has participants with more diverse legal backgrounds — many are also facing charges for assault, burglary, and theft.
+
+Theft Counseling, while intended for individuals with theft-related charges, also shows charge overlap — 60% of participants are additionally facing vandalism charges, suggesting a pattern of broader property-related offenses.
+
+Because these programs all see a population with a diverse set of charges, that suggests a diverse set of needs. 
+
+</details>
+
+### 4. ✅ Program Outcomes
+- What is the average outreach time 
+    Hint: This is a new function! `SELECT AVG(JULIANDAY(date1) - JULIANDAY(date2)) AS avg_outreach_days`
+- How many people referred to the program decided to enroll in the program? 
+- How many people have completed each program?
+     Hint for what to add in writeup: can we draw conclusions about why a person has or hasn't completed a program from this data? What does this say about the success of each of the programs?
+
+
+<details> <summary>💡 Starter queries</summary>
+
+```sql
+
+SELECT ____ , COUNT(*) AS completions
+...
+WHERE completiondate IS NOT NULL
+GROUP BY lu.name;
+
+```
+</details>
+
+<details> <summary>Answer queries</summary>
+
+```sql
+SELECT AVG(JULIANDAY(enrollmentdate) - JULIANDAY(outreachdate)) AS avg_outreach_days 
+FROM programming;
+--note, JULIANDATE is specific to SQLite and is called DATEDIFF elsewhere 
+
+SELECT lu.name, COUNT(*) AS enrollments
+FROM programming p
+JOIN programmingLU lu ON lu.programluid = p.programluid
+WHERE enrollmentdate IS NOT NULL
+GROUP BY lu.name;
+
+SELECT lu.name, COUNT(*) AS completions
+FROM programming p
+JOIN programmingLU lu ON lu.programluid = p.programluid
+WHERE completiondate IS NOT NULL
+GROUP BY lu.name;
+
+--see below a more complex way to calculate completion rate using CASE WHEN
+SELECT lu.name,
+  COUNT(CASE WHEN p.completiondate IS NOT NULL THEN 1 END) * 1.0 / COUNT(*) AS completion_rate
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name
+ORDER BY completion_rate DESC;
+
+```
+</details>
+
+<details> <summary>Potential Write Up</summary>
+
+The average time from referral to outreach across all programs is 20 days.
+
+In Intensive Relief, 70% (7 out of 10) of eligible participants enrolled, and 50% (5 out of 10) completed the program.
+
+In Speedy Recovery, 85% (11 out of 13) enrolled, and 69% (9 out of 13) completed the program.
+
+In Theft Counseling, 100% (5 out of 5) of eligible participants enrolled, and 80% (4 out of 5) completed the program.
+
+</details>
+
+### 5.⭐️ Optional Analysis (Challenge)
+- What can we tell about the population who chose not to complete the program? 
+- Both Intensive Relief and Speedy Recovery target those with drug charges. What makes these programs different? Which is "better"?
+
+
+<details> <summary>Answer queries</summary>
+
+```sql
+SELECT lu.name,
+  COUNT(CASE WHEN p.completiondate IS NOT NULL THEN 1 END) * 1.0 / COUNT(*) AS completion_rate
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name
+ORDER BY completion_rate DESC;
 ```
 
+</details>
 
+# Discussion questions:
 
-git add "README Teacher.md"
-git commit -m "Update README Teacher"
-git push origin main
+1. Who would like to present section 1?
+2. Who would like to present section 2?
+3. Who would like to present section 3?
+4. Who would like to present section 4?
+5. Who would like to present section 5?
 
-git restore --staged "README Teacher.md"
-git add "README Teacher.md"
-git commit -m "Force-resync README Teacher"
-git push origin main
+6. Did anyone produce a unique takeaway or do one of the optional analysis questions? and if so would you like to present?
 
+7. What findings would you want to make sure to emphasize to the executives/ what stood out?
 
+8. What disclaimers would you want to make about what conclusions are possible to derive from this dataset? 
+
+9. What other sources of data could enrich this analysis more? 
+
+# SQL Class Conclusion 
+
+If you are interested in continuing to learn SQL, some next steps would be exploring the following concepts: `CTEs`, `TEMP TABLES`, `CASE WHEN`, `CONCAT`, `PARTITION`, `SUBQUERIES` and more. 
+<br>
+Continuing to learn with SQL will allow you to discover more efficient ways to complete tasks, but even with a strong foundation in the SQL basics you've learned here, you'll be able to complete pretty thorough analyses. 
+
+Online Resources: https://sqliteonline.com/, https://mode.com/sql-tutorial, https://www.datacamp.com/ 
+
+Books (both avaliable and affordable on Amazon):
+
+- SQL Queries for Mere Mortals: A hands on Guide to Data Manipulation in SQL 
+       - Software Independent, meaning that what you learn here is transferrable to any RDMS (SQLite, SQL Server etc.)
+- Database Design for Mere Mortals: A hands on Guide to Relational Database Design 
+       - Highly reccomend for those with data engineering goals. Walk you through best practices on designing a database (like making sure every table has a primary key), how to navigate designing a database based on an organization's needs, and some basic SQL
+
+Using ChatGPT: In my experience ChatGPT won't always give you the most efficient ways to answer a SQL question, but it is excellent for troubleshooting typos and generating practice problems. If you give it some context like tables/columns/audience, it can respond pretty well. 
+
+Thank you students and thank you for your support Afsana and Jason! 
+<br>
+Students, If I can be of help to you in any way don't hesitate to reach out: dylancomerford1@gmail.com 

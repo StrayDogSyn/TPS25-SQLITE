@@ -1014,3 +1014,192 @@ STUDENTS: Can you write a query to list all drinks with more than 30mg of caffei
 In this lesson we have covered JOINS, HAVING, and CRUD operations. Next class, we will be doing an analytical project where you'll apply everythign you've learned so far! 
 
 Closing question: what did you learn and what are you still confused about? 
+
+# Welcome to Class 3! 
+
+Review Questions: 
+
+1. What do we need to be sure to include in an `UPDATE` or `DELETE` statement when modifying our databases? 
+
+✅
+
+2. In what format are DATEs stored in SQL?
+
+✅
+
+JOIN WARM-UP: 
+
+3. You'd like to view the number of people per charge for each program:  
+
+Your table will have these columns: PROGRAM NAME / CHARGE / PERSON COUNT
+
+✅
+
+# Analytics Project 
+
+**Scenario: Your office has launched multiple diversion program pilots. Leadership wants a summary of how these programs are performing and who they’re reaching. Your job is to query the database and create a short, clear report that answers the questions below.**
+
+Instructions: 
+- You will create an analytical report that follows the structure below. You must answer the questions under each heading and please also add one of your own takeaways. 
+- Remeber when you produce an analysis, you usually won't be presenting to people with a technical background. Therefore, you'll need to translate your data findings into a format that is digestible like a paragraph. 
+- You will start by writing a queries to pull numbers and then make a document with your findings. 
+
+Logistics: 
+- You can choose to create one report per person or per group — but everyone should collaborate on the queries and help each other debug. 
+- TAs and I will be available in a separate breakout room and will drop into groups periodically to check in.
+- We will still take both 10-minute breaks: One at 7:30 and one at 8:30 (EST). 
+- At 8:40 (EST), or earlier if groups are finished, we will regroup to discuss. I’ll invite groups to share their findings for each section if they’re comfortable.
+
+Use the `JTCsql.db` database to complete this report. As a reminder: 
+
+SETUP:
+
+1. sqlite3 JTCsql.db 
+2. .headers on 
+3. .mode box 
+
+TABLES:
+
+| Table Name       | Description                                      |
+|------------------|--------------------------------------------------|
+| `demographics`   | One row per person in the dataset                |
+| `legalall`       | One row per legal event — a person may have multiple|
+| `programming`    | One row per person referred to programming       |
+| `programmingLU`  | One row per program, with details                |
+
+
+### 1. 🧾 Program Overview
+
+- What are the programs? 
+- When did each of them start? 
+- What charge must a person have to be eligible for each program? 
+- How many people have been referred to each program? 
+      
+<details>
+<summary>💡 Starter queries</summary>
+
+```sql
+SELECT * FROM programmingLU;
+
+SELECT ____, COUNT(*) 
+FROM programming 
+GROUP BY ____;
+```
+</details>
+
+
+<br>
+
+ex. 
+When I run the following query: 
+
+```sql 
+SELECT * FROM programminglu;
+```
+
+I can start to write the following takeaway: 
+The programs the office is offering include Intensive Relief, Speedy Recovery, Theft Counseling, and ReEnter. Intensive Relief and Speedy Recovery are 2 distinct programs for those facing drug charges and both are offered by hope treatments... 
+
+### 2. 👥 Participant Demographics
+- What is the racial breakdown of participants in each program?
+- What is the gender breakdown?
+- What is the average age per program? -- Hint: use AVG() instead of COUNT() in the same format
+
+<details> <summary>💡 Starter queries</summary>
+
+```sql
+SELECT programluid, AVG(age)
+...
+GROUP BY programluid;
+```
+</details>
+
+### 3. ⚖️ Legal Background
+- What is the range of the number of legal events participants in each program has (between x and y legal events)?
+- How many people referred to any program had 5 legal events?
+- Along with the charge a participant MUST have to be eligible for a program, what are other common charges people in these programs are facing? 
+
+<details> <summary>💡 Starter queries</summary>
+
+```sql
+SELECT p.personid, lu.name, COUNT(l.legaleventid) AS num_events
+...
+GROUP BY lu.name, p.personid;
+
+....
+HAVING COUNT(l.legaleventid) = 5;
+
+
+SELECT lu.name AS program_name, l.topcharge, COUNT(DISTINCT p.personid) AS person_count
+FROM programming p
+JOIN legalall l ON l.personid = p.personid
+JOIN programmingLU lu ON lu.programluid = p.programluid
+GROUP BY lu.name, l.topcharge; 
+```
+</details>
+
+
+### 4. ✅ Program Outcomes
+- What is the average outreach time 
+    Hint: This is a new function! `SELECT AVG(JULIANDAY(date1) - JULIANDAY(date2)) AS avg_outreach_days`
+- How many people referred to the program decided to enroll in the program? 
+- How many people have completed each program?
+     Hint for what to add in writeup: can we draw conclusions about why a person has or hasn't completed a program from this data? What does this say about the success of each of the programs?
+
+
+<details> <summary>💡 Starter queries</summary>
+
+```sql
+
+SELECT ____ , COUNT(*) AS completions
+...
+WHERE completiondate IS NOT NULL
+GROUP BY lu.name;
+
+```
+</details>
+
+
+
+### 5.⭐️ Extra Analysis (Take from here or create your own)
+- What can we tell about the population who chose not to complete the program? 
+- Both Intensive Relief and Speedy Recovery target those with drug charges. What makes these programs different? Which is "better"?
+
+
+# Discussion questions:
+
+1. Who would like to present section 1?
+2. Who would like to present section 2?
+3. Who would like to present section 3?
+4. Who would like to present section 4?
+5. Who would like to present section 5?
+
+6. Did anyone produce a unique takeaway or do one of the optional analysis questions? and if so would you like to present?
+
+7. What findings would you want to make sure to emphasize to the executives/ what stood out?
+
+8. What disclaimers would you want to make about what conclusions are possible to derive from this dataset? 
+
+9. What other sources of data could enrich this analysis more? 
+
+# SQL Class Conclusion 
+
+If you are interested in continuing to learn SQL, some next steps would be exploring the following concepts: `CTEs`, `TEMP TABLES`, `CASE WHEN`, `CONCAT`, `PARTITION`, `SUBQUERIES` and more. 
+<br>
+Continuing to learn with SQL will allow you to discover more efficient ways to complete tasks, but even with a strong foundation in the SQL basics you've learned here, you'll be able to complete pretty thorough analyses. 
+
+Online Resources: https://sqliteonline.com/, https://mode.com/sql-tutorial, https://www.datacamp.com/ 
+
+Books (both avaliable and affordable on Amazon):
+
+- SQL Queries for Mere Mortals: A hands on Guide to Data Manipulation in SQL 
+       - Software Independent, meaning that what you learn here is transferrable to any RDMS (SQLite, SQL Server etc.)
+- Database Design for Mere Mortals: A hands on Guide to Relational Database Design 
+       - Highly reccomend for those with data engineering goals. Walk you through best practices on designing a database (like making sure every table has a primary key), how to navigate designing a database based on an organization's needs, and some basic SQL
+
+Using ChatGPT: In my experience ChatGPT won't always give you the most efficient ways to answer a SQL question, but it is excellent for troubleshooting typos and generating practice problems. If you give it some context like tables/columns/audience, it can respond pretty well. 
+
+Thank you students and thank you for your support Afsana and Jason! 
+<br>
+Students, If I can be of help to you in any way don't hesitate to reach out: dylancomerford1@gmail.com 
+
