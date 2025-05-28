@@ -178,6 +178,7 @@ SELECT * FROM drinks
 WHERE caffeine > 30 
 ORDER BY caffeine DESC;
 
+
 ========================================
 CLOSING REFLECTION
 ========================================
