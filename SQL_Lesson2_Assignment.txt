@@ -164,8 +164,8 @@ CREATE TABLE drinks (
 INSERT INTO drinks (drinkname, type, caffeine)
 VALUES 
     ('Coca Cola', 'Soda', 34),
-    ('Orange Juice', 'Juice', 0),
-    ('Green Tea', 'Tea', 25);
+    ('Root Beer', 'Soda', 0),
+    ('Mountain Dew', 'Soda', 125);
 
 6. Update drink caffeine to 35mg:
 UPDATE drinks SET caffeine = 35 WHERE drinkname = 'Coca Cola';
