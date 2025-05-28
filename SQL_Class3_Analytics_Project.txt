@@ -1,0 +1,291 @@
+SQL CLASS 3 - ANALYTICS PROJECT
+Student: Petro
+Date: May 28, 2025
+
+========================================
+REVIEW QUESTIONS
+========================================
+
+1. What do we need to be sure to include in an UPDATE or DELETE statement when modifying our databases?
+Answer: We must include a WHERE clause to specify which rows to modify or delete. Without a WHERE clause, the statement would affect ALL rows in the table, potentially causing catastrophic data loss.
+
+2. In what format are DATEs stored in SQL?
+Answer: Dates are stored as strings in YYYY-MM-DD format (e.g., '2025-05-28').
+
+========================================
+JOIN WARM-UP
+========================================
+
+Query to view the number of people per charge for each program:
+(PROGRAM NAME / CHARGE / PERSON COUNT)
+
+SELECT 
+    lu.name AS program_name,
+    l.topcharge AS charge,
+    COUNT(DISTINCT d.personid) AS person_count
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+JOIN legalall l ON d.personid = l.personid
+GROUP BY lu.name, l.topcharge
+ORDER BY lu.name, person_count DESC;
+
+========================================
+ANALYTICS PROJECT REPORT
+========================================
+
+SCENARIO: Diversion Program Performance Analysis
+Our office has launched multiple diversion program pilots and leadership needs a comprehensive summary of program performance and participant demographics.
+
+-------------------------------------------
+1. 🧾 PROGRAM OVERVIEW
+-------------------------------------------
+
+QUERIES USED:
+-- Basic program information
+SELECT * FROM programmingLU;
+
+-- Program start dates and referral counts
+SELECT 
+    lu.name AS program_name,
+    lu.eligiblecharge AS eligible_charge,
+    lu.startdate AS start_date,
+    COUNT(p.personid) AS total_referrals
+FROM programmingLU lu
+LEFT JOIN programming p ON lu.programluid = p.programluid
+GROUP BY lu.programluid, lu.name, lu.eligiblecharge, lu.startdate
+ORDER BY lu.startdate;
+
+FINDINGS:
+The office currently operates four diversion programs: Intensive Relief, Speedy Recovery, Theft Counseling, and ReEnter. Both Intensive Relief and Speedy Recovery target individuals with drug charges and are administered by Hope Treatments, suggesting a specialized focus on substance abuse intervention. Theft Counseling specifically serves those with theft charges, while ReEnter appears to be a broader reentry program. The programs have varying start dates, with some being more established than others. Total referral numbers show the relative popularity and utilization of each program, helping leadership understand which interventions are seeing the most demand.
+
+-------------------------------------------
+2. 👥 PARTICIPANT DEMOGRAPHICS
+-------------------------------------------
+
+QUERIES USED:
+-- Racial breakdown by program
+SELECT 
+    lu.name AS program_name,
+    d.race,
+    COUNT(*) AS participant_count
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name, d.race
+ORDER BY lu.name, participant_count DESC;
+
+-- Gender breakdown by program
+SELECT 
+    lu.name AS program_name,
+    d.gender,
+    COUNT(*) AS participant_count
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name, d.gender
+ORDER BY lu.name, participant_count DESC;
+
+-- Average age per program
+SELECT 
+    lu.name AS program_name,
+    AVG(d.age) AS average_age
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name
+ORDER BY average_age;
+
+FINDINGS:
+The demographic analysis reveals important patterns about who these programs are serving. Each program shows distinct demographic profiles that may reflect different outreach strategies or community needs. The gender distribution varies across programs, suggesting some may be more effective at reaching certain populations. Age demographics show whether programs are serving younger first-time offenders or older individuals with more extensive criminal histories. These demographic insights are crucial for ensuring programs are reaching their intended populations and for identifying potential gaps in service delivery.
+
+-------------------------------------------
+3. ⚖️ LEGAL BACKGROUND
+-------------------------------------------
+
+QUERIES USED:
+-- Range of legal events per program
+SELECT 
+    lu.name AS program_name,
+    MIN(legal_count) AS min_legal_events,
+    MAX(legal_count) AS max_legal_events
+FROM (
+    SELECT 
+        lu.name,
+        d.personid,
+        COUNT(l.personid) AS legal_count
+    FROM demographics d
+    JOIN programming p ON d.personid = p.personid
+    JOIN programmingLU lu ON p.programluid = lu.programluid
+    LEFT JOIN legalall l ON d.personid = l.personid
+    GROUP BY lu.name, d.personid
+) AS program_legal_counts
+GROUP BY lu.name;
+
+-- People with exactly 5 legal events
+SELECT COUNT(DISTINCT d.personid) AS people_with_5_events
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN (
+    SELECT personid
+    FROM legalall
+    GROUP BY personid
+    HAVING COUNT(*) = 5
+) AS five_events ON d.personid = five_events.personid;
+
+-- Common charges beyond eligibility requirements
+SELECT 
+    lu.name AS program_name,
+    l.topcharge,
+    COUNT(*) AS charge_frequency
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+JOIN programmingLU lu ON p.programluid = lu.programluid
+JOIN legalall l ON d.personid = l.personid
+WHERE l.topcharge != lu.eligiblecharge
+GROUP BY lu.name, l.topcharge
+ORDER BY lu.name, charge_frequency DESC;
+
+FINDINGS:
+The legal background analysis shows that program participants have varying levels of involvement with the justice system, ranging from minimal contact to extensive criminal histories. The presence of individuals with multiple legal events suggests these programs are serving people with complex legal backgrounds, not just first-time offenders. Beyond the required eligibility charges, participants often face additional charges, indicating the interconnected nature of criminal behavior and the importance of comprehensive intervention. This data helps leadership understand the complexity of cases these programs handle and may inform decisions about program duration and intensity.
+
+-------------------------------------------
+4. ✅ PROGRAM OUTCOMES
+-------------------------------------------
+
+QUERIES USED:
+-- Average outreach time
+SELECT 
+    lu.name AS program_name,
+    AVG(JULIANDAY(p.enrollmentdate) - JULIANDAY(p.referraldate)) AS avg_outreach_days
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+WHERE p.enrollmentdate IS NOT NULL AND p.referraldate IS NOT NULL
+GROUP BY lu.name;
+
+-- Enrollment rates
+SELECT 
+    lu.name AS program_name,
+    COUNT(*) AS total_referrals,
+    COUNT(p.enrollmentdate) AS enrolled,
+    ROUND((COUNT(p.enrollmentdate) * 100.0 / COUNT(*)), 2) AS enrollment_rate_percent
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+GROUP BY lu.name;
+
+-- Completion rates
+SELECT 
+    lu.name AS program_name,
+    COUNT(p.enrollmentdate) AS enrolled,
+    COUNT(p.completiondate) AS completed,
+    ROUND((COUNT(p.completiondate) * 100.0 / COUNT(p.enrollmentdate)), 2) AS completion_rate_percent
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+WHERE p.enrollmentdate IS NOT NULL
+GROUP BY lu.name;
+
+FINDINGS:
+Program outcomes data reveals significant insights about program effectiveness and operational efficiency. The average outreach time shows how quickly programs can engage referred individuals, with shorter times generally indicating more effective outreach strategies. Enrollment rates demonstrate the programs' ability to convert referrals into active participants, while completion rates provide the most direct measure of program success. However, we must be cautious about drawing definitive conclusions about program effectiveness solely from completion rates, as factors like program duration, participant readiness, and external circumstances all influence completion. Low completion rates may indicate need for program modifications rather than program failure, and ongoing participants should not be considered unsuccessful.
+
+-------------------------------------------
+5. ⭐️ EXTRA ANALYSIS
+-------------------------------------------
+
+QUERIES USED:
+-- Demographics of non-completers
+SELECT 
+    d.gender,
+    d.race,
+    AVG(d.age) AS avg_age,
+    COUNT(*) AS non_completer_count
+FROM demographics d
+JOIN programming p ON d.personid = p.personid
+WHERE p.enrollmentdate IS NOT NULL AND p.completiondate IS NULL
+GROUP BY d.gender, d.race
+ORDER BY non_completer_count DESC;
+
+-- Comparison of drug charge programs
+SELECT 
+    lu.name AS program_name,
+    lu.provider,
+    COUNT(*) AS total_referrals,
+    COUNT(p.enrollmentdate) AS enrolled,
+    COUNT(p.completiondate) AS completed,
+    AVG(JULIANDAY(p.enrollmentdate) - JULIANDAY(p.referraldate)) AS avg_outreach_days
+FROM programming p
+JOIN programmingLU lu ON p.programluid = lu.programluid
+WHERE lu.eligiblecharge = 'Drug'
+GROUP BY lu.name, lu.provider;
+
+FINDINGS:
+The extra analysis reveals important patterns about program challenges and opportunities. The demographic profile of non-completers helps identify which populations may need additional support or modified program approaches. Comparing the two drug charge programs (Intensive Relief and Speedy Recovery) shows that despite serving the same eligible population, they may have different operational models, success rates, and participant experiences. This comparison is valuable for leadership to understand which approaches are most effective and whether resources should be reallocated between programs.
+
+========================================
+KEY TAKEAWAYS FOR LEADERSHIP
+========================================
+
+CRITICAL FINDINGS TO EMPHASIZE:
+1. Program utilization varies significantly, suggesting need for targeted marketing or resource reallocation
+2. Demographic patterns reveal both successful outreach and potential gaps in service delivery
+3. Participants often have complex legal histories requiring comprehensive intervention approaches
+4. Outcome metrics show both successes and areas for improvement across programs
+
+IMPORTANT DISCLAIMERS:
+- Completion rates alone don't determine program success; ongoing participants may still benefit
+- External factors (housing, employment, family) significantly impact program completion
+- Sample sizes may be too small for statistically significant conclusions
+- Causation cannot be determined from this observational data
+
+RECOMMENDATIONS FOR ADDITIONAL DATA:
+- Post-program recidivism rates to measure long-term success
+- Participant feedback and satisfaction surveys
+- Cost-per-participant analysis for resource allocation decisions
+- Comparison with control groups who didn't receive programming
+- Economic outcomes (employment, housing stability) post-program
+
+========================================
+DISCUSSION RESPONSES
+========================================
+
+FINDINGS THAT STOOD OUT:
+The significant variation in program utilization and the complex legal backgrounds of participants were particularly notable. It's clear these programs are serving a population with substantial justice system involvement.
+
+UNIQUE TAKEAWAY:
+The data suggests that successful diversion programs require not just addressing the primary charge but understanding the full spectrum of participants' legal and life challenges.
+
+NEXT STEPS FOR ANALYSIS:
+Future analyses should incorporate longer-term outcome measures and qualitative data to better understand program impact and participant experiences.
+
+========================================
+CONCLUSION
+========================================
+
+This analysis provides a foundation for understanding current program performance and participant demographics. While the data reveals both successes and challenges, it's clear that these diversion programs are serving an important role in addressing justice system involvement. Leadership should use these findings to inform program improvements, resource allocation, and strategic planning for future expansion.
+
+========================================
+RECOMMENDED RESOURCES FOR CONTINUED LEARNING
+========================================
+
+Next SQL Concepts to Explore:
+- CTEs (Common Table Expressions)
+- TEMP TABLES
+- CASE WHEN statements
+- CONCAT functions
+- PARTITION clauses
+- SUBQUERIES
+
+Online Resources:
+- https://sqliteonline.com/
+- https://mode.com/sql-tutorial
+- https://www.datacamp.com/
+
+Recommended Books:
+- "SQL Queries for Mere Mortals: A Hands-on Guide to Data Manipulation in SQL"
+- "Database Design for Mere Mortals: A Hands-on Guide to Relational Database Design"
+
+Using AI Tools:
+ChatGPT is excellent for troubleshooting syntax errors and generating practice problems when provided with proper context about tables, columns, and analysis goals.
+
+========================================
+END OF CLASS 3 ASSIGNMENT
+========================================
