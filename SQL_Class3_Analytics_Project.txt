@@ -89,7 +89,7 @@ ORDER BY lu.name, participant_count DESC;
 -- Average age per program
 SELECT 
     lu.name AS program_name,
-    AVG(d.age) AS average_age
+    ROUND(AVG(d.age), 2) AS average_age
 FROM demographics d
 JOIN programming p ON d.personid = p.personid
 JOIN programmingLU lu ON p.programluid = lu.programluid
