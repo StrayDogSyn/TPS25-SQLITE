@@ -48,13 +48,13 @@ SELECT * FROM programmingLU;
 -- Program start dates and referral counts
 SELECT 
     lu.name AS program_name,
-    lu.eligiblecharge AS eligible_charge,
-    lu.startdate AS start_date,
+    lu.chargeseligible AS eligible_charge,
+    lu.contractstart AS start_date,
     COUNT(p.personid) AS total_referrals
 FROM programmingLU lu
 LEFT JOIN programming p ON lu.programluid = p.programluid
-GROUP BY lu.programluid, lu.name, lu.eligiblecharge, lu.startdate
-ORDER BY lu.startdate;
+GROUP BY lu.programluid, lu.name, lu.chargeseligible, lu.contractstart
+ORDER BY lu.contractstart;
 
 FINDINGS:
 The office currently operates four diversion programs: Intensive Relief, Speedy Recovery, Theft Counseling, and ReEnter. Both Intensive Relief and Speedy Recovery target individuals with drug charges and are administered by Hope Treatments, suggesting a specialized focus on substance abuse intervention. Theft Counseling specifically serves those with theft charges, while ReEnter appears to be a broader reentry program. The programs have varying start dates, with some being more established than others. Total referral numbers show the relative popularity and utilization of each program, helping leadership understand which interventions are seeing the most demand.
@@ -106,12 +106,12 @@ The demographic analysis reveals important patterns about who these programs are
 QUERIES USED:
 -- Range of legal events per program
 SELECT 
-    lu.name AS program_name,
+    program_name,
     MIN(legal_count) AS min_legal_events,
     MAX(legal_count) AS max_legal_events
 FROM (
     SELECT 
-        lu.name,
+        lu.name AS program_name,
         d.personid,
         COUNT(l.personid) AS legal_count
     FROM demographics d
@@ -120,7 +120,7 @@ FROM (
     LEFT JOIN legalall l ON d.personid = l.personid
     GROUP BY lu.name, d.personid
 ) AS program_legal_counts
-GROUP BY lu.name;
+GROUP BY program_name;
 
 -- People with exactly 5 legal events
 SELECT COUNT(DISTINCT d.personid) AS people_with_5_events
@@ -142,7 +142,7 @@ FROM demographics d
 JOIN programming p ON d.personid = p.personid
 JOIN programmingLU lu ON p.programluid = lu.programluid
 JOIN legalall l ON d.personid = l.personid
-WHERE l.topcharge != lu.eligiblecharge
+WHERE l.topcharge != lu.chargeseligible
 GROUP BY lu.name, l.topcharge
 ORDER BY lu.name, charge_frequency DESC;
 
@@ -157,7 +157,7 @@ QUERIES USED:
 -- Average outreach time
 SELECT 
     lu.name AS program_name,
-    AVG(JULIANDAY(p.enrollmentdate) - JULIANDAY(p.referraldate)) AS avg_outreach_days
+    ROUND(AVG(JULIANDAY(p.enrollmentdate) - JULIANDAY(p.referraldate)), 2) AS avg_outreach_days
 FROM programming p
 JOIN programmingLU lu ON p.programluid = lu.programluid
 WHERE p.enrollmentdate IS NOT NULL AND p.referraldate IS NOT NULL
@@ -211,10 +211,10 @@ SELECT
     COUNT(*) AS total_referrals,
     COUNT(p.enrollmentdate) AS enrolled,
     COUNT(p.completiondate) AS completed,
-    AVG(JULIANDAY(p.enrollmentdate) - JULIANDAY(p.referraldate)) AS avg_outreach_days
+    ROUND(AVG(JULIANDAY(p.enrollmentdate) - JULIANDAY(p.referraldate)), 2) AS avg_outreach_days
 FROM programming p
 JOIN programmingLU lu ON p.programluid = lu.programluid
-WHERE lu.eligiblecharge = 'Drug'
+WHERE lu.chargeseligible = 'drug'
 GROUP BY lu.name, lu.provider;
 
 FINDINGS:
